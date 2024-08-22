@@ -126,11 +126,15 @@
             // do your thing
             gps.innerHTML = "緯度: " + position.coords.latitude +
                 "<br>經度: " + position.coords.longitude;
+                
+            status.style.backgroundColor = "#fff666";
+            status.innerHTML = "<h2>偵測中...</h2>";
             for (let k in list) {
-                if ((list[k].latitude + 0.0002000) >= position.coords.latitude && (list[k].latitude - 0.0002000) <= position.coords.latitude) {
-                    if ((list[k].longitude + 0.0002000) >= position.coords.longitude && (list[k].longitude - 0.0002000) <= position.coords.longitude) {
+                if ((list[k].latitude + 0.0001000) >= position.coords.latitude && (list[k].latitude - 0.0001000) <= position.coords.latitude) {
+                    if ((list[k].longitude + 0.0001000) >= position.coords.longitude && (list[k].longitude - 0.0001000) <= position.coords.longitude) {
                         status.style.backgroundColor = "#ff6666";
                         status.innerHTML = "<h2>" + list[k].name + "</h2>";
+                        break;
                     }
                 }
             }
