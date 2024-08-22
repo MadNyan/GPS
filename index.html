@@ -94,8 +94,8 @@
     const list = [
         {
             name: '檢查點1', // 公司
-            latitude: 24.1708839,
-            longitude: 120.6475659
+            latitude: 24.1709876,
+            longitude: 120.6474047
         },
         {
             name: '檢查點2', // World Gym
@@ -104,8 +104,8 @@
         },        
         {
             name: '檢查點3', // 21Plus 西屯寶慶
-            latitude: 24.1711988,
-            longitude: 120.6474132
+            latitude: 24.1711122,
+            longitude: 120.6476264
         },
     ];
 
@@ -127,8 +127,8 @@
             gps.innerHTML = "緯度: " + position.coords.latitude +
                 "<br>經度: " + position.coords.longitude;
             for (let k in list) {
-                if ((list[k].latitude + 0.0001000) >= position.coords.latitude && (list[k].latitude - 0.0001000) <= position.coords.latitude) {
-                    if ((list[k].longitude + 0.0001000) >= position.coords.longitude && (list[k].longitude - 0.0001000) <= position.coords.longitude) {
+                if ((list[k].latitude + 0.0002000) >= position.coords.latitude && (list[k].latitude - 0.0002000) <= position.coords.latitude) {
+                    if ((list[k].longitude + 0.0002000) >= position.coords.longitude && (list[k].longitude - 0.0002000) <= position.coords.longitude) {
                         status.style.backgroundColor = "#ff6666";
                         status.innerHTML = "<h2>" + list[k].name + "</h2>";
                     }
