@@ -217,8 +217,10 @@
     }
 
     const intervalCalculatePreciseLocation= setInterval(() => {
-        let position = calculatePreciseLocation(positions);
-        showGps(position.latitude, position.longitude);
+        if (positions && positions.length > 0) {
+          let position = calculatePreciseLocation(positions);
+          showGps(position.latitude, position.longitude);
+        }
     }, 1000);
 
     const intervalFilterOutliers = setInterval(() => {
