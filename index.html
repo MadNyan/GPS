@@ -90,22 +90,32 @@
 <script>
     const status = document.getElementById("status");
     const gps = document.getElementById("gps");
-
+    let positions = [];
     const list = [
         {
-            name: '檢查點1', // 公司
-            latitude: 24.1709876,
-            longitude: 120.6474047
+            name: '檢查點1', // World Gym 機車停車場
+            latitude: 24.171079641051612, 
+            longitude: 120.64706850674592
         },
         {
-            name: '檢查點2', // World Gym
-            latitude: 24.1711489,
-            longitude: 120.6467544
+            name: '檢查點2', 
+            latitude: 24.17104415880113, 
+            longitude: 120.64705375459634
+        },   
+        {
+            name: '檢查點3', 
+            latitude: 24.171037429407697, 
+            longitude: 120.64702559140164
+        },   
+        {
+            name: '檢查點4', 
+            latitude: 24.171043547038103, 
+            longitude: 120.64699072268442
         },        
         {
-            name: '檢查點3', // 21Plus 西屯寶慶
-            latitude: 24.1711122,
-            longitude: 120.6476264
+            name: '檢查點5', 
+            latitude: 24.171087593968483, 
+            longitude: 120.64696323004199
         },
     ];
 
@@ -118,25 +128,16 @@
         // success callback
         (position) => {
             console.log('get position:', position);
+            positions.push({
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                accuracy: position.coords.accuracy,
+                timestamp: position.timestamp
+            });
             // clear timeout to prevent cleanup
             if (watchPositionTimeoutHandle) {
                 window.clearTimeout(watchPositionTimeoutHandle);
                 watchPositionTimeoutHandle = null;
-            }
-            // do your thing
-            gps.innerHTML = "緯度: " + position.coords.latitude +
-                "<br>經度: " + position.coords.longitude;
-                
-            status.style.backgroundColor = "#fff666";
-            status.innerHTML = "<h2>偵測中...</h2>";
-            for (let k in list) {
-                if ((list[k].latitude + 0.0001000) >= position.coords.latitude && (list[k].latitude - 0.0001000) <= position.coords.latitude) {
-                    if ((list[k].longitude + 0.0001000) >= position.coords.longitude && (list[k].longitude - 0.0001000) <= position.coords.longitude) {
-                        status.style.backgroundColor = "#ff6666";
-                        status.innerHTML = "<h2>" + list[k].name + "</h2>";
-                        break;
-                    }
-                }
             }
         },
         // error callback
@@ -163,6 +164,66 @@
         500
     );
 
+    function calculatePreciseLocation(positions) {
+        let sumLat = 0, sumLng = 0, totalWeight = 0;
+
+        positions.forEach(pos => {
+            const weight = 1 / pos.accuracy; // 假設精度越高權重越大
+            sumLat += pos.latitude * weight;
+            sumLng += pos.longitude * weight;
+            totalWeight += weight;
+        });
+
+        const preciseLat = sumLat / totalWeight;
+        const preciseLng = sumLng / totalWeight;
+
+        console.log(`Precise Location: Latitude ${preciseLat}, Longitude ${preciseLng}`);
+        return {
+          latitude: preciseLat, 
+          longitude: preciseLng
+        };
+    }
+
+    function filterOutliers(positions) {
+        const latitudes = positions.map(pos => pos.latitude);
+        const longitudes = positions.map(pos => pos.longitude);
+
+        const meanLat = latitudes.reduce((a, b) => a + b, 0) / latitudes.length;
+        const meanLng = longitudes.reduce((a, b) => a + b, 0) / longitudes.length;
+
+        return positions.filter(pos => {
+            const latDiff = Math.abs(pos.latitude - meanLat);
+            const lngDiff = Math.abs(pos.longitude - meanLng);
+            return latDiff < 0.0001 && lngDiff < 0.0001; // 調整此閾值來排除異常值
+        });
+    }
+    
+    function showGps(latitude, longitude) {
+        // do your thing
+        gps.innerHTML = "緯度: " + latitude +
+            "<br>經度: " + longitude;
+            
+        status.style.backgroundColor = "#fff666";
+        status.innerHTML = "<h2>偵測中...</h2>";
+        for (let k in list) {
+            if ((list[k].latitude + 0.0000200) >= latitude && (list[k].latitude - 0.0000200) <= latitude) {
+                if ((list[k].longitude + 0.0000200) >= longitude && (list[k].longitude - 0.0000200) <= longitude) {
+                    status.style.backgroundColor = "#ff6666";
+                    status.innerHTML = "<h2>" + list[k].name + "</h2>";
+                    break;
+                }
+            }
+        }
+    }
+
+    const intervalCalculatePreciseLocation= setInterval(() => {
+        let position = calculatePreciseLocation(positions);
+        showGps(position.latitude, position.longitude);
+    }, 1000);
+
+    const intervalFilterOutliers = setInterval(() => {
+        positions = filterOutliers(positions);
+    }, 3000);
 </script>
 
 <script>
