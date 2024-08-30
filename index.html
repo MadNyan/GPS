@@ -119,50 +119,28 @@
         },
     ];
 
-    let watchPositionTimeoutHandle = null;
-    const options = {
-        timeout: 500,
-    };
-
-    const watchId = navigator.geolocation.watchPosition(
-        // success callback
-        (position) => {
-            console.log('get position:', position);
-            positions.push({
-                latitude: position.coords.latitude,
-                longitude: position.coords.longitude,
-                accuracy: position.coords.accuracy,
-                timestamp: position.timestamp
+    function getPosition() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(position => {
+                positions.push({
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                    accuracy: position.coords.accuracy,
+                    timestamp: position.timestamp
+                });
+            }, error => {
+                console.error(error);
+            }, {
+                enableHighAccuracy: true,
+                timeout: 5000,
+                maximumAge: 0
             });
-            // clear timeout to prevent cleanup
-            if (watchPositionTimeoutHandle) {
-                window.clearTimeout(watchPositionTimeoutHandle);
-                watchPositionTimeoutHandle = null;
-            }
-        },
-        // error callback
-        (error) => {
-            console.log('error')
-            // clear timeout to prevent cleanup
-            if (watchPositionTimeoutHandle) {
-                window.clearTimeout(watchPositionTimeoutHandle);
-                watchPositionTimeoutHandle = null
-            }
-            // do your thing
-            gps.innerHTML = "error";
-        },
-        options
-    );
+        } else {
+            console.error("Geolocation is not supported by this browser.");
+        }
+    }
 
-    watchPositionTimeoutHandle = window.setTimeout(
-        () => {
-            // if watchPositionTimeoutHandle exists, that means callback not fire.
-            // clearup here.
-            navigator.geolocation.clearWatch(watchId);
-            console.log('setTimeout')
-        },
-        500
-    );
+    const intervalId = setInterval(getPosition, 500);
 
     function calculatePreciseLocation(positions) {
         let sumLat = 0, sumLng = 0, totalWeight = 0;
