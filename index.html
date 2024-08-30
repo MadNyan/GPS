@@ -122,6 +122,9 @@
     function getPosition() {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(position => {
+                if (positions.length > 30) {
+                    positions.shift();
+                }
                 positions.push({
                     latitude: position.coords.latitude,
                     longitude: position.coords.longitude,
@@ -201,9 +204,9 @@
         }
     }, 1000);
 
-    const intervalFilterOutliers = setInterval(() => {
-        positions = filterOutliers(positions);
-    }, 3000);
+    // const intervalFilterOutliers = setInterval(() => {
+    //     positions = filterOutliers(positions);
+    // }, 3000);
 </script>
 
 <script>
