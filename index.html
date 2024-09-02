@@ -36,13 +36,27 @@
         <div class="card card-primary">
           <div class="card-body">
             <div class="row">
+              <div class="col-12">
+              <div class="card card-outline card-success">
+                  <div class="card-header">
+                      <h3 class="card-title">地圖</h3>
+                  </div>                    
+                  <div class="card-body">
+                    <canvas id="canvas" style="width: 100%;"></canvas>
+                    <img id="map" src="./dist/img/map.png" style="width: 100%; display:none;" alt="map" border="0">
+                  </div>
+              </div>
+            </div>
               <div class="col-md-12">
                 <div class="card card-outline card-primary">
                     <div class="card-header">
                         <h3 class="card-title">狀態</h3>
                     </div>                    
-                    <div id="status" class="card-body d-flex" style="min-height: 300px; justify-content: center; align-items: center; background-color: #fff666;">
-                        <h2>偵測中...</h2>
+                    <div id="status" class="card-body" style="min-height: 100px;">
+                      <p>已抵達【檢查點1】</p>
+                      <p>已檢修【檢查點1】</p>
+                      <p>已抵達【檢查點2】</p>
+                      <p>已檢修【檢查點2】</p>
                     </div>
                 </div>
               </div>
@@ -51,7 +65,7 @@
                     <div class="card-header">
                         <h3 class="card-title">經緯度</h3>
                     </div>                    
-                    <div id="gps" class="card-body" style="min-height: 300px;">
+                    <div id="gps" class="card-body" style="min-height: 100px;">
                         Gps is not supported by this device.
                     </div>
                 </div>
@@ -62,6 +76,30 @@
       </div><!-- /.container-fluid -->
     </section>
     <!-- /.content -->
+
+
+    <div class="modal fade" id="modal">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title">檢測項目</h4>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body" id="modal-body">
+            <p>是否開始檢修【檢查點2】</p>
+          </div>
+          <div class="modal-footer justify-content-between">
+            <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+            <button type="button" class="btn btn-primary">確認</button>
+          </div>
+        </div>
+        <!-- /.modal-content -->
+      </div>
+      <!-- /.modal-dialog -->
+    </div>
+    <!-- /.modal -->
 
     <a id="back-to-top" href="#" class="btn btn-primary back-to-top" role="button" aria-label="Scroll to top">
       <i class="fas fa-chevron-up"></i>
@@ -88,24 +126,59 @@
 <script src="./dist/js/adminlte.min.js"></script>
 
 <script>
+    const img = document.getElementById(`map`)
+    const canvas = document.getElementById('canvas');
+    canvas.width = 800;
+    canvas.height = 600;
+    const ctx = canvas.getContext('2d');
+    const drawImg = () => {
+        ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, canvas.width, canvas.height);
+        ctx.font = '32px serif';
+        ctx.fillText("✔️檢查點1", 600, 382);
+        ctx.fillText("✔️檢查點2", 442, 510);
+        ctx.fillText("❌檢查點3", 290, 330);
+        // ctx.fillText("👨‍💼", 600, 392);
+        ctx.fillText("👨‍💼", 442, 520);
+        // ctx.fillText("👨‍💼", 600, 422);
+        // ctx.fillText("👨‍💼", 700, 300);
+    };
+
+    img.onload = e => {
+      drawImg();
+    };
+    drawImg();
+    
+    const reveal = ()=>{
+        drawImg();
+        
+    }
+
+    img.style.filter = `blur(${blur}px)`;
+    document.addEventListener(`click`, reveal);
+
+
+    const modal = new bootstrap.Modal(document.getElementById('modal'));
+    // modal.show();
+    // modal.hide();
+    const modalBody = document.getElementById("modal-body");
     const status = document.getElementById("status");
     const gps = document.getElementById("gps");
     let positions = [];
     const list = [
         {
             name: '檢查點1', // World Gym 機車停車場
-            latitude: 24.171079641051612, 
-            longitude: 120.64706850674592
+            latitude: 24.171070119842593, 
+            longitude: 120.64688236200061
         },
         {
             name: '檢查點2', 
             latitude: 24.17104415880113, 
-            longitude: 120.64705375459634
+            longitude: 120.64679614096313
         },   
         {
             name: '檢查點3', 
             latitude: 24.171037429407697, 
-            longitude: 120.64702559140164
+            longitude: 120.64699819132261
         },   
         {
             name: '檢查點4', 
@@ -122,13 +195,18 @@
     function getPosition() {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(position => {
-                if (positions.length > 30) {
+                if (positions.length > 10) {
                     positions.shift();
                 }
+                console.log(position);
                 positions.push({
                     latitude: position.coords.latitude,
                     longitude: position.coords.longitude,
                     accuracy: position.coords.accuracy,
+                    altitude: position.coords.altitude,
+                    altitudeAccuracy : position.coords.altitudeAccuracy,
+                    heading : position.coords.heading,
+                    speed : position.coords.speed,
                     timestamp: position.timestamp
                 });
             }, error => {
@@ -179,18 +257,22 @@
         });
     }
     
-    function showGps(latitude, longitude) {
+    function showGps(latitude, longitude, position) {
         // do your thing
         gps.innerHTML = "緯度: " + latitude +
             "<br>經度: " + longitude;
+        gps.innerHTML = gps.innerHTML + "<br>當前緯度: " + position.latitude +
+            "<br>當前經度: " + position.longitude + 
+            "<br>當前精準度: " + position.accuracy + " m" + 
+            "<br>當前高度: " + position.altitude + 
+            "<br>當前高度精準度: " + position.altitudeAccuracy + " m" + 
+            "<br>當前方向: " + position.heading + 
+            "<br>當前速度: " + position.speed  + " m/s";
             
-        status.style.backgroundColor = "#fff666";
-        status.innerHTML = "<h2>偵測中...</h2>";
         for (let k in list) {
             if ((list[k].latitude + 0.0000200) >= latitude && (list[k].latitude - 0.0000200) <= latitude) {
                 if ((list[k].longitude + 0.0000200) >= longitude && (list[k].longitude - 0.0000200) <= longitude) {
-                    status.style.backgroundColor = "#ff6666";
-                    status.innerHTML = "<h2>" + list[k].name + "</h2>";
+                    status.innerHTML = status.innerHTML + "<h2>已抵達【" + list[k].name + "】</h2>";
                     break;
                 }
             }
@@ -200,7 +282,7 @@
     const intervalCalculatePreciseLocation= setInterval(() => {
         if (positions && positions.length > 0) {
           let position = calculatePreciseLocation(positions);
-          showGps(position.latitude, position.longitude);
+          showGps(position.latitude, position.longitude, positions[positions.length - 1]);
         }
     }, 1000);
 
