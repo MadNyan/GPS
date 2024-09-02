@@ -192,6 +192,59 @@
         },
     ];
 
+    let watchPositionTimeoutHandle = null;
+    const options = {
+        enableHighAccuracy: true,
+        timeout: 500,
+    };
+
+    const watchId = navigator.geolocation.watchPosition(
+        // success callback
+        (position) => {
+            // clear timeout to prevent cleanup
+            if (watchPositionTimeoutHandle) {
+                window.clearTimeout(watchPositionTimeoutHandle);
+                watchPositionTimeoutHandle = null;
+            }
+            console.log(position);
+            if (positions.length > 21) {
+                positions.shift();
+            }
+            positions.push({
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                accuracy: position.coords.accuracy,
+                altitude: position.coords.altitude,
+                altitudeAccuracy : position.coords.altitudeAccuracy,
+                heading : position.coords.heading,
+                speed : position.coords.speed,
+                timestamp: position.timestamp
+            });
+        },
+        // error callback
+        (error) => {
+            console.log('error')
+            // clear timeout to prevent cleanup
+            if (watchPositionTimeoutHandle) {
+                window.clearTimeout(watchPositionTimeoutHandle);
+                watchPositionTimeoutHandle = null
+            }
+            // do your thing
+            gps.innerHTML = "error";
+        },
+        options
+    );
+
+    watchPositionTimeoutHandle = window.setTimeout(
+        () => {
+            // if watchPositionTimeoutHandle exists, that means callback not fire.
+            // clearup here.
+            navigator.geolocation.clearWatch(watchId);
+            console.log('setTimeout')
+        },
+        1000
+    );
+
     function getPosition() {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(position => {
@@ -221,7 +274,7 @@
         }
     }
 
-    const intervalId = setInterval(getPosition, 500);
+    // const intervalId = setInterval(getPosition, 500);
 
     function calculatePreciseLocation(positions) {
         let sumLat = 0, sumLng = 0, totalWeight = 0;
@@ -269,14 +322,14 @@
             "<br>當前方向: " + position.heading + 
             "<br>當前速度: " + position.speed  + " m/s";
             
-        for (let k in list) {
-            if ((list[k].latitude + 0.0000200) >= latitude && (list[k].latitude - 0.0000200) <= latitude) {
-                if ((list[k].longitude + 0.0000200) >= longitude && (list[k].longitude - 0.0000200) <= longitude) {
-                    status.innerHTML = status.innerHTML + "<h2>已抵達【" + list[k].name + "】</h2>";
-                    break;
-                }
-            }
-        }
+        // for (let k in list) {
+        //     if ((list[k].latitude + 0.0000200) >= latitude && (list[k].latitude - 0.0000200) <= latitude) {
+        //         if ((list[k].longitude + 0.0000200) >= longitude && (list[k].longitude - 0.0000200) <= longitude) {
+        //             status.innerHTML = status.innerHTML + "<h2>已抵達【" + list[k].name + "】</h2>";
+        //             break;
+        //         }
+        //     }
+        // }
     }
 
     const intervalCalculatePreciseLocation= setInterval(() => {
