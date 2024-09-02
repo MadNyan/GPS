@@ -43,7 +43,7 @@
                   </div>                    
                   <div class="card-body">
                     <canvas id="canvas" style="width: 100%;"></canvas>
-                    <img id="map" src="./dist/img/map2.png" style="width: 100%; display:none;" alt="map" border="0">
+                    <img id="map" src="./dist/img/map.png" style="width: 100%; display:none;" alt="map" border="0">
                   </div>
               </div>
             </div>
@@ -53,20 +53,52 @@
                         <h3 class="card-title">狀態</h3>
                     </div>                    
                     <div id="status" class="card-body" style="min-height: 100px;">
-                      <p>已抵達【檢查點1】</p>
-                      <p>已檢修【檢查點1】</p>
-                      <p>已抵達【檢查點2】</p>
-                      <p>已檢修【檢查點2】</p>
+                      <p>尚未抵達任何檢查點</p>
                     </div>
                 </div>
               </div>
               <div class="col-md-12">
-                <div class="card card-outline card-success">
+                <div class="card card-outline card-warning">
                     <div class="card-header">
                         <h3 class="card-title">經緯度</h3>
                     </div>                    
                     <div id="gps" class="card-body" style="min-height: 100px;">
                         Gps is not supported by this device.
+                    </div>
+                </div>
+              </div>
+              <div class="col-md-12">
+                <div class="card card-outline card-danger">
+                    <div class="card-header">
+                        <h3 class="card-title">更改</h3>
+                    </div>                    
+                    <div class="card-body" style="min-height: 100px;">
+                        <div class="row">
+                          <div class="col-12 mt-1">
+                            <label class="form-label">地圖始-緯度</label>
+                            <input id="txtlat0" type="number" class="form-control" placeholder="緯度" value="24.171481">
+                          </div>
+                          <div class="col-12 mt-1">
+                            <label class="form-label">地圖始-經度</label>
+                            <input id="txtlng0" type="number" class="form-control" placeholder="經度" value="120.646397">
+                          </div>
+                          <div class="col-12 mt-1">
+                            <label class="form-label">地圖末-緯度</label>
+                            <input id="txtlat1" type="number" class="form-control" placeholder="緯度" value="24.170742">
+                          </div>
+                          <div class="col-12 mt-1">
+                            <label class="form-label">地圖末-經度</label>
+                            <input id="txtlng1" type="number" class="form-control" placeholder="經度" value="120.647446">
+                          </div>
+                          <div class="col-12 mt-1">
+                            <label class="form-label">誤差範圍</label>
+                            <input id="txtmapRange" type="number" class="form-control" placeholder="誤差範圍" value="5">
+                          </div>
+                          <div class="col-12 mt-1">
+                            <button type="button" class="btn btn-default" onclick="init()">重製</button>
+                            <button type="button" class="btn btn-primary" onclick="change()">確認</button>
+                          </div>
+                        </div>
                     </div>
                 </div>
               </div>
@@ -92,7 +124,7 @@
           </div>
           <div class="modal-footer justify-content-between">
             <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
-            <button type="button" class="btn btn-primary">確認</button>
+            <button type="button" class="btn btn-primary" onclick="repair()">確認</button>
           </div>
         </div>
         <!-- /.modal-content -->
@@ -126,35 +158,72 @@
 <script src="./dist/js/adminlte.min.js"></script>
 
 <script>
-    let x1, y1, x2, y2 = 0.0;
+    const modal = new bootstrap.Modal(document.getElementById('modal'));
+    // modal.show();
+    // modal.hide();
+    const modalBody = document.getElementById("modal-body");
+    const status = document.getElementById("status");
+    const gps = document.getElementById("gps");
+    let positions = [];
+    // ❌✔️👨‍💼
+    const list = [
+        {
+            name: '檢查點1',
+            icon: '❌',
+            latitude: 24.1711022, 
+            longitude: 120.6469354,
+            x: (600+16),
+            y: (382-16),
+        },
+        {
+            name: '檢查點2', 
+            icon: '❌',
+            latitude: 24.1709531, 
+            longitude: 120.6469873,
+            x: (442+16),
+            y: (510-16),
+        },   
+        {
+            name: '檢查點3', 
+            icon: '❌',
+            latitude: 24.1711160, 
+            longitude: 120.6468482,
+            x: (290+16),
+            y: (330-16),
+        },
+    ];
 
+    let lat0 = 24.171481, lng0 = 120.646397, lat1 = 24.170742, lng1 = 120.647446;
+    let mapRange = 5;
+
+    let x = 0, y = 0;
+    let currentPrint = -1;
+    let isArrival = false;
     const img = document.getElementById(`map`)
     const canvas = document.getElementById('canvas');
-    canvas.width = 600;
-    canvas.height = 462;
+    canvas.width = 800;
+    canvas.height = 600;
     const ctx = canvas.getContext('2d');
-    const drawImg = (x, y) => {
+    const drawImg = () => {
         ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, canvas.width, canvas.height);
         ctx.font = '32px serif';
-        ctx.fillText("✔️檢查點1", 600, 382); // 24.1710180, 120.6472130
-        ctx.fillText("✔️檢查點2", 442, 510); // 24.1708740, 120.6470060
-        ctx.fillText("❌檢查點3", 290, 330); // 24.1711110, 120.6467890
-        ctx.fillText("✔️", 0-16, 0+16); // 24.1708740, 120.6470060
-        ctx.fillText("❌", 600-16, 462+16); // 24.1711110, 120.6467890
+        for (let k in list) {
+            ctx.fillText(list[k].icon + list[k].name, list[k].x-16, list[k].y+16);
+        }
         ctx.fillText("👨‍💼", x-16, y+16);
     };
 
     img.onload = e => {
-      drawImg(0, 0);
+      drawImg();
     };
-    drawImg(0, 0);
+    drawImg();
 
     function calculateMapCoordinate(lat, lng) {
         // 已知點的地圖座標與經緯度
         console.log({lat, lng});
         const points = [
-            { mapX: 0, mapY: 0, lat: 24.171236954784856, lng: 120.64646812405216 },
-            { mapX: 600, mapY: 462, lat: 24.170770546352426, lng: 120.64714215682537 }
+            { mapX: 0, mapY: 0, lat: 24.171481, lng: 120.646397 },
+            { mapX: 800, mapY: 600, lat: 24.170742, lng: 120.647446 }
         ];
 
         // 計算 X 軸和 Y 軸的比例
@@ -167,34 +236,8 @@
         const mapX = ((lng - points[0].lng) / lngRange) * mapXRange + points[0].mapX;
         const mapY = ((lat - points[0].lat) / latRange) * mapYRange + points[0].mapY;
 
-        drawImg(mapX, mapY);
-        console.log({mapX, mapY});
+        return {x: mapX, y: mapY};
     }
-
-    const modal = new bootstrap.Modal(document.getElementById('modal'));
-    // modal.show();
-    // modal.hide();
-    const modalBody = document.getElementById("modal-body");
-    const status = document.getElementById("status");
-    const gps = document.getElementById("gps");
-    let positions = [];
-    const list = [
-        {
-            name: '檢查點1', // World Gym 機車停車場
-            latitude: 24.1711022, 
-            longitude: 120.6469354
-        },
-        {
-            name: '檢查點2', 
-            latitude: 24.1709531, 
-            longitude: 120.6469873
-        },   
-        {
-            name: '檢查點3', 
-            latitude: 24.1711160, 
-            longitude: 120.6468482
-        },
-    ];
 
     let watchPositionTimeoutHandle = null;
     const options = {
@@ -249,34 +292,34 @@
         1000
     );
 
-    function getPosition() {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(position => {
-                if (positions.length > 10) {
-                    positions.shift();
-                }
-                console.log(position);
-                positions.push({
-                    latitude: position.coords.latitude,
-                    longitude: position.coords.longitude,
-                    accuracy: position.coords.accuracy,
-                    altitude: position.coords.altitude,
-                    altitudeAccuracy : position.coords.altitudeAccuracy,
-                    heading : position.coords.heading,
-                    speed : position.coords.speed,
-                    timestamp: position.timestamp
-                });
-            }, error => {
-                console.error(error);
-            }, {
-                enableHighAccuracy: true,
-                timeout: 5000,
-                maximumAge: 0
-            });
-        } else {
-            console.error("Geolocation is not supported by this browser.");
-        }
-    }
+    // function getPosition() {
+    //     if (navigator.geolocation) {
+    //         navigator.geolocation.getCurrentPosition(position => {
+    //             if (positions.length > 10) {
+    //                 positions.shift();
+    //             }
+    //             console.log(position);
+    //             positions.push({
+    //                 latitude: position.coords.latitude,
+    //                 longitude: position.coords.longitude,
+    //                 accuracy: position.coords.accuracy,
+    //                 altitude: position.coords.altitude,
+    //                 altitudeAccuracy : position.coords.altitudeAccuracy,
+    //                 heading : position.coords.heading,
+    //                 speed : position.coords.speed,
+    //                 timestamp: position.timestamp
+    //             });
+    //         }, error => {
+    //             console.error(error);
+    //         }, {
+    //             enableHighAccuracy: true,
+    //             timeout: 5000,
+    //             maximumAge: 0
+    //         });
+    //     } else {
+    //         console.error("Geolocation is not supported by this browser.");
+    //     }
+    // }
 
     // const intervalId = setInterval(getPosition, 500);
 
@@ -326,24 +369,73 @@
             "<br>當前方向: " + position.heading + 
             "<br>當前速度: " + position.speed  + " m/s";
             
-        // for (let k in list) {
-        //     if ((list[k].latitude + 0.0000200) >= latitude && (list[k].latitude - 0.0000200) <= latitude) {
-        //         if ((list[k].longitude + 0.0000200) >= longitude && (list[k].longitude - 0.0000200) <= longitude) {
-        //             status.innerHTML = status.innerHTML + "<h2>已抵達【" + list[k].name + "】</h2>";
-        //             break;
-        //         }
-        //     }
-        // }
+        for (let k in list) {
+            if ((list[k].x + mapRange) >= x && (list[k].x - mapRange) <= x) {
+                if ((list[k].y + mapRange) >= y && (list[k].y - mapRange) <= y) {
+                    currentPrint = k;
+                    modalBody.innerHTML = '<p>是否開始檢修【' + list[k].name + '】？</p>';
+                    modal.show();
+                    if (!isArrival) {
+                        status.innerHTML = "<p>&emsp;已抵達【" + list[k].name + "】</p><br>";
+                        isArrival = true;
+                    } else {
+                        status.innerHTML = status.innerHTML + "<p>&emsp;已抵達【" + list[k].name + "】</p><br>";
+                    }
+                    break;
+                }
+            }
+        }
     }
 
     const intervalCalculatePreciseLocation= setInterval(() => {
         if (positions && positions.length > 0) {
           let position = calculatePreciseLocation(positions);
+          let pos = calculateMapCoordinate(position.latitude, position.longitude);
+          x = pos.x;
+          y = pos.y;
           showGps(position.latitude, position.longitude, positions[positions.length - 1]);
-          // calculateMapCoordinate(position.latitude, position.longitude);
-          calculateMapCoordinate(24.1710523,120.6467881);
         }
     }, 1000);
+    
+    function change() {
+        const txtlat0 = document.getElementById('txtlat0');
+        const txtlng0 = document.getElementById('txtlng0');
+        const txtlat1 = document.getElementById('txtlat1');
+        const txtlng1 = document.getElementById('txtlng1');
+        const txtmapRange = document.getElementById('txtmapRange');
+
+        lat0 = parseInt(txtlat0.value.toString());
+        lng0 = parseInt(txtlng0.value.toString());
+        lat1 = parseInt(txtlat1.value.toString());
+        lng1 = parseInt(txtlng1.value.toString());
+        mapRange = parseInt(txtmapRange.value.toString());
+    }
+    
+    function init() {
+        const txtlat0 = document.getElementById('txtlat0');
+        const txtlng0 = document.getElementById('txtlng0');
+        const txtlat1 = document.getElementById('txtlat1');
+        const txtlng1 = document.getElementById('txtlng1');
+        const txtmapRange = document.getElementById('txtmapRange');
+
+        lat0 = 24.171481;
+        lng0 = 120.646397;
+        lat1 = 24.170742;
+        lng1 = 120.647446;
+        mapRange = 5;
+
+        txtlat0.value = lat0;
+        txtlng0.value = lng0;
+        txtlat1.value = lat1;
+        txtlng1.value = lng1;
+        txtmapRange.value = mapRange;
+    }
+
+    function repair() {
+        list[currentPrint].icon = '✔️';
+        status.innerHTML = status.innerHTML + "<p>✔️已檢修【" + list[currentPrint].name + "】</p><br>";
+        modal.hide();
+    }
 
     // const intervalFilterOutliers = setInterval(() => {
     //     positions = filterOutliers(positions);
