@@ -43,7 +43,7 @@
                   </div>                    
                   <div class="card-body">
                     <canvas id="canvas" style="width: 100%;"></canvas>
-                    <img id="map" src="./dist/img/map.png" style="width: 100%; display:none;" alt="map" border="0">
+                    <img id="map" src="./dist/img/map2.png" style="width: 100%; display:none;" alt="map" border="0">
                   </div>
               </div>
             </div>
@@ -130,16 +130,18 @@
 
     const img = document.getElementById(`map`)
     const canvas = document.getElementById('canvas');
-    canvas.width = 800;
-    canvas.height = 600;
+    canvas.width = 600;
+    canvas.height = 462;
     const ctx = canvas.getContext('2d');
     const drawImg = (x, y) => {
         ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, canvas.width, canvas.height);
         ctx.font = '32px serif';
-        ctx.fillText("✔️檢查點1", 600, 382); // 24.171018, 120.647207
-        ctx.fillText("✔️檢查點2", 442, 510); // 24.1708612,120.6463433
-        ctx.fillText("❌檢查點3", 290, 330); // 24.1710862,120.6461613
-        ctx.fillText("👨‍💼", x, y);
+        ctx.fillText("✔️檢查點1", 600, 382); // 24.1710180, 120.6472130
+        ctx.fillText("✔️檢查點2", 442, 510); // 24.1708740, 120.6470060
+        ctx.fillText("❌檢查點3", 290, 330); // 24.1711110, 120.6467890
+        ctx.fillText("✔️", 0-16, 0+16); // 24.1708740, 120.6470060
+        ctx.fillText("❌", 600-16, 462+16); // 24.1711110, 120.6467890
+        ctx.fillText("👨‍💼", x-16, y+16);
     };
 
     img.onload = e => {
@@ -151,20 +153,19 @@
         // 已知點的地圖座標與經緯度
         console.log({lat, lng});
         const points = [
-            { mapX: 600, mapY: 382, lat: 24.1711022, lng: 120.6472070 },
-            { mapX: 442, mapY: 510, lat: 24.1709531, lng: 120.6463433 },
-            { mapX: 290, mapY: 330, lat: 24.1711160, lng: 120.6461613 }
+            { mapX: 0, mapY: 0, lat: 24.171236954784856, lng: 120.64646812405216 },
+            { mapX: 600, mapY: 462, lat: 24.170770546352426, lng: 120.64714215682537 }
         ];
 
         // 計算 X 軸和 Y 軸的比例
-        const latRange = Math.max(...points.map(p => p.lat)) - Math.min(...points.map(p => p.lat));
-        const lngRange = Math.max(...points.map(p => p.lng)) - Math.min(...points.map(p => p.lng));
-        const mapXRange = Math.max(...points.map(p => p.mapX)) - Math.min(...points.map(p => p.mapX));
-        const mapYRange = Math.max(...points.map(p => p.mapY)) - Math.min(...points.map(p => p.mapY));
+        const latRange = points[1].lat - points[0].lat;
+        const lngRange = points[1].lng - points[0].lng;
+        const mapXRange = points[1].mapX - points[0].mapX;
+        const mapYRange = points[1].mapY - points[0].mapY;
 
         // 經緯度轉換為地圖座標
-        const mapX = ((lng - Math.min(...points.map(p => p.lng))) / lngRange) * mapXRange + Math.min(...points.map(p => p.mapX));
-        const mapY = ((lat - Math.min(...points.map(p => p.lat))) / latRange) * mapYRange + Math.min(...points.map(p => p.mapY));
+        const mapX = ((lng - points[0].lng) / lngRange) * mapXRange + points[0].mapX;
+        const mapY = ((lat - points[0].lat) / latRange) * mapYRange + points[0].mapY;
 
         drawImg(mapX, mapY);
         console.log({mapX, mapY});
@@ -340,7 +341,7 @@
           let position = calculatePreciseLocation(positions);
           showGps(position.latitude, position.longitude, positions[positions.length - 1]);
           // calculateMapCoordinate(position.latitude, position.longitude);
-          calculateMapCoordinate(24.1710452, 120.6465699);
+          calculateMapCoordinate(24.1710523,120.6467881);
         }
     }, 1000);
 
